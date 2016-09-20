@@ -24,16 +24,21 @@ defmodule Extacct.GatewayMock do
 
   defp body(xml) do
     cond do
-      xml =~ "readReport" -> read_report_json
-      xml =~ "readMore"   -> read_more_json
+      xml =~ "readReport"  -> read_report_json
+      xml =~ "readMore"    -> read_more_json
+      xml =~ "readByName"  -> read_by_name_json
+      xml =~ "readByQuery" -> read_by_query_json
+      xml =~ "read"        -> read_json
     end
   end
 
   defp read_report_json, do:
-    ~s({
-         "REPORTID":"random_string",
-         "STATUS":"PENDING"
-       }
+    ~s([
+         {
+           "REPORTID":"random_string",
+           "STATUS":"PENDING"
+         }
+       ]
     )
 
   defp read_more_json, do:
@@ -47,6 +52,27 @@ defmodule Extacct.GatewayMock do
            "RECORD1COLUMN1":"RECORD1VALUE1"
          },
          "STATUS":"DONE"
+       }
+    )
+
+  defp read_by_name_json, do:
+    ~s({
+         "ENTRY_DATE":"09/16/2016",
+         "RECORDNO":"1000"
+       }
+    )
+
+  defp read_by_query_json, do:
+    ~s({
+         "ENTRY_DATE":"09/16/2016",
+         "RECORDNO":"1000"
+       }
+    )
+
+  defp read_json, do:
+    ~s({
+         "ENTRY_DATE":"09/16/2016",
+         "RECORDNO":"1000"
        }
     )
 

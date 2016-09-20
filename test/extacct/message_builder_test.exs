@@ -6,7 +6,7 @@ defmodule Extacct.MessageBuilderTest do
 
   @control_id "testFunctionId"
   @dtd_version "3.0"
-  @report_name "Report - Anaplan Exp PLC BS"
+  @report_name "Report - Important Information Here"
   @return_definitions false
 
   doctest Extacct.MessageBuilder

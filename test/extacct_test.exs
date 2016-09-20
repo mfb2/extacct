@@ -9,8 +9,10 @@ defmodule ExtacctTest do
   @report_record_one "1"
   @report_status_key "STATUS"
   @report_status_value "DONE"
+  @object_name "GLENTRY"
+  @object_query "ENTRY_DATE > '09/01/2016'"
 
-  test "can call readReport from Extacct" do
+  test "can readReport from Extacct" do
     entry = Extacct.read_report(@report_name)
     |> Map.get(@report_id_key)
 
@@ -21,8 +23,8 @@ defmodule ExtacctTest do
     assert entry == @report_id_value
   end
 
-  test "can call readMore from Extacct" do
-    report = Extacct.read_more(@report_id_value)
+  test "can readMore from Extacct" do
+    report = Extacct.read_more(:reportId, @report_id_value)
 
     verify_report_keys(report)
     verify_report_values(report)
@@ -55,4 +57,22 @@ defmodule ExtacctTest do
   defp get_report_entry_value(report_record_key, report_record_value, entry_value_index) do
     Map.get(report_record_value, "RECORD#{report_record_key}COLUMN#{entry_value_index}")
   end
+
+  test "can read from Extacct" do
+    object_data = Extacct.read(@object_name, [])
+    verify_object_data(object_data)
+  end
+
+  test "can read by name from Extacct" do
+    object_data = Extacct.read_by_name(@object_name, "Ledger Entry")
+    verify_object_data(object_data)
+  end
+
+  test "can read by query from Extacct" do
+    object_data = Extacct.read_by_query(@object_name, @object_query)
+    verify_object_data(object_data)
+  end
+
+  defp verify_object_data(object_data), do:
+    assert object_data == %{"ENTRY_DATE" => "09/16/2016", "RECORDNO" => "1000"}
 end
