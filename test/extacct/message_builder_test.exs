@@ -1,15 +1,15 @@
 defmodule Extacct.MessageBuilderTest do
   use ExUnit.Case
 
-  alias Extacct.MessageBuilder
-  alias Extacct.FunctionBuilder
+  alias Extacct.API.MessageBuilder
+  alias Extacct.API.FunctionBuilder
 
   @control_id "testFunctionId"
   @dtd_version "3.0"
   @report_name "Report - Important Information Here"
   @return_definitions false
 
-  doctest Extacct.MessageBuilder
+  doctest Extacct.API.MessageBuilder
 
   test "generates a valid control tuple" do
     assert expected_control == MessageBuilder.control(@control_id)

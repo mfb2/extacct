@@ -1,4 +1,4 @@
-defmodule Extacct.Gateway do
+defmodule Extacct.API.Gateway do
   import Extacct.EnvironmentHelper
 
   @headers [{"content-type", "x-intacct-xml-request"}]

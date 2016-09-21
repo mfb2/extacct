@@ -1,4 +1,4 @@
-defmodule Extacct.ResponseHandler do
+defmodule Extacct.API.ResponseHandler do
 
   def parse({:error, %HTTPoison.Error{reason: reason}}) do
     {:error, reason}

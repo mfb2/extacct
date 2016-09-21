@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :extacct, :intacct_api,
-  gateway: Extacct.Gateway,
+  gateway: Extacct.API.Gateway,
   endpoint: "https://api.intacct.com/ia/xml/xmlgw.phtml",
   dtd_version: "3.0",
   page_size: 100,

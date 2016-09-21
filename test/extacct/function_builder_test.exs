@@ -1,7 +1,7 @@
 defmodule Extacct.FunctionBuilderTest do
   use ExUnit.Case
   import Extacct.EnvironmentHelper
-  alias Extacct.FunctionBuilder
+  alias Extacct.API.FunctionBuilder
 
   @control_id         "testFunctionId"
   @report_name        "Report - Very Important Report"
@@ -16,7 +16,7 @@ defmodule Extacct.FunctionBuilderTest do
   @object_name        "Ledger Entry"
   @object_query       "ENTRY_DATE > '09/01/2016'"
 
-  doctest Extacct.FunctionBuilder
+  doctest Extacct.API.FunctionBuilder
 
   test "generates a valid readReport tuple" do
     assert expected_read_report == generate_report

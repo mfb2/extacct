@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :extacct, :intacct_api,
-  gateway: Extacct.GatewayMock,
+  gateway: Extacct.API.GatewayMock,
   endpoint: "localhost",
   sender_id: "test_sender",
   sender_password: "test_sender_password",

@@ -1,4 +1,4 @@
-defmodule Extacct.FunctionBuilder do
+defmodule Extacct.API.FunctionBuilder do
   import Extacct.EnvironmentHelper
 
   @no_value      ""

@@ -1,7 +1,6 @@
-defmodule Extacct.MessageBuilder do
+defmodule Extacct.API.MessageBuilder do
   import Extacct.EnvironmentHelper
-
-  alias Extacct.FunctionBuilder
+  alias Extacct.API.FunctionBuilder
 
   @control_id "testFunctionId"
   @all_fields "*"

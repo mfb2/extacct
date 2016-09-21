@@ -1,4 +1,4 @@
-defmodule Extacct.GatewayMock do
+defmodule Extacct.API.GatewayMock do
 
   def send_request(xml), do: {:ok, response(xml)}
 
