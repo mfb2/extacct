@@ -8,7 +8,7 @@ defmodule Extacct.FunctionBuilderTest do
   @return_definitions false
   @no_value           ""
   @no_params          %{}
-  @return_format      "json"
+  @return_format      "xml"
   @object_name        "GLENTRY"
   @all_fields         "*"
   @object_entry_date  "09/16/2016"

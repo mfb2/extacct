@@ -1,51 +1,38 @@
 defmodule Extacct.API do
-
   import Extacct.EnvironmentHelper
-
   alias Extacct.API.MessageBuilder
-  alias Extacct.API.ResponseHandler
 
-  def read(object, keys) do
-    MessageBuilder.read(object, keys)
-    |> process_request
-  end
-  def read(object, fields, keys) do
-    MessageBuilder.read(object, fields, keys)
-    |> process_request
+  @max_list_size "100"
+  @all_fields "*"
+
+  def read(object, keys, fields \\ @all_fields) do
+    MessageBuilder.read(object, keys, fields)
+    |> process_request(:read)
   end
 
-  def read_by_name(object, keys) do
-    MessageBuilder.read_by_name(object, keys)
-    |> process_request
-  end
-  def read_by_name(object, fields, keys) do
-    MessageBuilder.read_by_name(object, fields, keys)
-    |> process_request
+  def read_by_name(object, keys, fields \\ @all_fields) do
+    MessageBuilder.read_by_name(object, keys, fields)
+    |> process_request(:readByName)
   end
 
-  def read_by_query(object, query) do
-    MessageBuilder.read_by_query(object, query)
-    |> process_request
-  end
-  def read_by_query(object, fields, query) do
-    MessageBuilder.read_by_query(object, fields, query)
-    |> process_request
+  def read_by_query(object, query, fields \\ @all_fields) do
+    MessageBuilder.read_by_query(object, query, fields)
+    |> process_request(:readByQuery)
   end
 
   def read_report(report_name) do
     MessageBuilder.read_report(report_name)
-    |> process_request
+    |> process_request(:readReport)
   end
 
   def read_more(method, identifier) do
     MessageBuilder.read_more(method, identifier)
-    |> process_request
+    |> process_request(:readMore)
   end
 
-  defp process_request(request) do
+  defp process_request(request, request_type) do
     request
-    |> gateway.send_request
-    |> ResponseHandler.parse
+    |> gateway.process(request_type)
   end
 
   defp gateway, do: env_var(:gateway)

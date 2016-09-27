@@ -1,15 +1,11 @@
 defmodule Extacct.API.Gateway do
-  import Extacct.EnvironmentHelper
 
-  @headers [{"content-type", "x-intacct-xml-request"}]
+  alias Extacct.API.Gateway.Endpoint
+  alias Extacct.API.Gateway.ResponseHandler
 
-  def send_request(xml),   do: HTTPoison.post(url, xml, @headers, opts)
-
-  defp url,                do: env_var(:endpoint)
-  defp opts,               do: [connect_timeout: connection_timeout, recv_timeout: recv_timeout, timeout: timeout]
-
-  defp connection_timeout, do: env_var(:connection_timeout)
-  defp recv_timeout,       do: env_var(:recv_timeout)
-  defp timeout,            do: env_var(:timeout)
+  def process(xml, request_type) do
+    Endpoint.post(xml)
+    |> ResponseHandler.handle(request_type)
+  end
 
 end

@@ -1,13 +1,13 @@
 defmodule Extacct do
   alias Extacct.API
 
-  def read(object, keys),                   do: API.read(object, keys)
-  def read(object, fields, keys),           do: API.read(object, fields, keys)
-  def read_by_name(object, keys),           do: API.read_by_name(object, keys)
-  def read_by_name(object, fields, keys),   do: API.read_by_name(object, fields, keys)
-  def read_by_query(object, query),         do: API.read_by_query(object, query)
-  def read_by_query(object, fields, query), do: API.read_by_query(object, fields, query)
-  def read_report(report_name),             do: API.read_report(report_name)
-  def read_more(method, identifier),        do: API.read_more(method, identifier)
+  @all_fields "*"
+  @max_list_size "100"
+
+  def read(object, keys, fields \\ @all_fields),           do: elem(API.read(object, keys, fields), 1)
+  def read_by_name(object, keys, fields \\ @all_fields),   do: elem(API.read_by_name(object, keys, fields), 1)
+  def read_by_query(object, query, fields \\ @all_fields), do: elem(API.read_by_query(object, query, fields), 1)
+  def read_report(report_name),                            do: elem(API.read_report(report_name), 1)
+  def read_more(method, identifier),                       do: elem(API.read_more(method, identifier), 1)
 
 end
