@@ -5,6 +5,10 @@ defmodule Extacct.API do
   @max_list_size "100"
   @all_fields "*"
 
+  def get_list(object, max_list_size \\ @max_list_size) do
+    MessageBuilder.get_list(object, max_list_size)
+    |> process_request(:get_list)
+  end
   def read(object, keys, fields \\ @all_fields) do
     MessageBuilder.read(object, keys, fields)
     |> process_request(:read)

@@ -4,6 +4,12 @@ defmodule Extacct.API.MessageBuilder do
 
   @control_id "testFunctionId"
 
+  def get_list(object, max_list_size) do
+    String.downcase(object)
+    |> FunctionBuilder.get_list(max_list_size, @control_id)
+    |> build_xml_request(@control_id)
+  end
+
   def read(object, keys, fields) do
     FunctionBuilder.read(object, fields, keys, @control_id)
     |> build_xml_request(@control_id)

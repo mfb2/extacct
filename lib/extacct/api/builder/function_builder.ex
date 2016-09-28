@@ -4,6 +4,10 @@ defmodule Extacct.API.FunctionBuilder do
   @no_value      ""
   @no_params     %{}
 
+  def get_list(object, max_list_size, control_id) do
+    get_list_spec(object, max_list_size)
+    |> function_spec(control_id)
+  end
 
   def read(object, fields, keys, control_id) do
     read_spec(:read, object, fields, keys)
@@ -28,6 +32,11 @@ defmodule Extacct.API.FunctionBuilder do
     read_by_query_spec(object, fields, query)
     |> function_spec(control_id)
   end
+
+  defp get_list_spec(object, max_list_size), do:
+  {
+    :get_list, %{"object" => object, "maxitems" => max_list_size}, []
+  }
 
   defp read_spec(read_type, object, fields, []),   do: read_spec(read_type, object, fields, @no_value)
   defp read_spec(read_type, object, fields, keys), do:
