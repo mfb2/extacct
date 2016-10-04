@@ -1,4 +1,4 @@
-defmodule Extacct.API.Gateway.ResponseHandler.HTTPResponseHandler do
+defmodule Extacct.API.Gateway.HTTPResponseHandler do
 
   def handle({:error, %HTTPoison.Error{reason: reason}}), do:
     {:error, reason}

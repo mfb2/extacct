@@ -16,29 +16,32 @@ defmodule Extacct.API do
 
   def read_by_name(object, keys, fields \\ @all_fields) do
     MessageBuilder.read_by_name(object, keys, fields)
-    |> process_request(:readByName)
+    |> process_request(:read_by_name)
   end
 
   def read_by_query(object, query, fields \\ @all_fields) do
     MessageBuilder.read_by_query(object, query, fields)
-    |> process_request(:readByQuery)
+    |> process_request(:read_by_query)
   end
 
   def read_report(report_name) do
     MessageBuilder.read_report(report_name)
-    |> process_request(:readReport)
+    |> process_request(:read_report)
   end
 
   def read_more(method, identifier) do
     MessageBuilder.read_more(method, identifier)
-    |> process_request(:readMore)
+    |> process_request(:read_more)
   end
 
   defp process_request(request, request_type) do
     request
     |> gateway.process(request_type)
+    |> build_response(request_type)
   end
 
   defp gateway, do: env_var(:gateway)
+
+  defp build_response(response, request_type), do: {request_type, response}
 
 end

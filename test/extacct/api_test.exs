@@ -16,12 +16,12 @@ defmodule Extacct.APITest do
   @object_query "ENTRY_DATE > '09/01/2016'"
 
   test "can readReport from Extacct API" do
-    {:report_submitted, response_content} = API.read_report(@report_name)
+    {:read_report, {:report_submitted, response_content}} = API.read_report(@report_name)
     assert Keyword.get(response_content, :report_id) == @report_id_value
   end
 
   test "can readMore from Extacct API" do
-    report = API.read_more(:reportId, @report_id_value)
+    {:read_more, report} = API.read_more(:reportId, @report_id_value)
 
     verify_report_keys(report)
     verify_report_values(report)
@@ -61,12 +61,12 @@ defmodule Extacct.APITest do
   end
 
   test "can read by name from Extacct API" do
-    {:readByName, object_data} = API.read_by_name(@object, @object_name)
+    {:read_by_name, object_data} = API.read_by_name(@object, @object_name)
     verify_object_data(object_data)
   end
 
   test "can read by query from Extacct API" do
-    {:readByQuery, object_data} = API.read_by_query(@object, @object_query)
+    {:read_by_query, object_data} = API.read_by_query(@object, @object_query)
     verify_object_data(object_data)
   end
 
@@ -74,6 +74,6 @@ defmodule Extacct.APITest do
     assert object_data == %{"ENTRY_DATE" => "09/16/2016", "RECORDNO" => "1000"}
 
   test "bad requests return an error" do
-    assert {:error, "Invalid Report"} == API.read_report(@bad_report_name)
+    assert {:read_report, {:error, "Invalid Report"}} == API.read_report(@bad_report_name)
   end
 end
