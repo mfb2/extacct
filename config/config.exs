@@ -12,4 +12,7 @@ config :extacct, :intacct_api,
   recv_timeout: 60000,
   timeout: 60000
 
+config :logger,
+  level: :warn
+
 import_config "#{Mix.env}.exs"

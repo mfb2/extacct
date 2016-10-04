@@ -8,3 +8,6 @@ config :extacct, :intacct_api,
   user_id: "",
   company_id: "",
   user_password: ""
+
+config :logger,
+  level: :info
