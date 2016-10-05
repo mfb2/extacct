@@ -6,8 +6,8 @@ defmodule Extacct.API.GatewayMock do
 
   def process(xml, :read_report) do
     cond do
-      xml =~ "GenServer Test Report Results" -> [report: report_status(:results)]
-      xml =~ "GenServer Test Report End"     -> [report: report_status(:completed)]
+      xml =~ "GenServer Test Report Results" -> [report_results: report_status(:results)]
+      xml =~ "GenServer Test Report End"     -> [report_results: report_status(:completed)]
       xml =~ "Rando Report"                  -> {:report_submitted, report_id: "random_string"}
       xml =~ "Broken Report"                 -> {:error, "Invalid Report"}
     end

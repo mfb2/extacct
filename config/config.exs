@@ -10,7 +10,8 @@ config :extacct, :intacct_api,
   wait_time: 30,
   connection_timeout: 60000,
   recv_timeout: 60000,
-  timeout: 60000
+  timeout: 60000,
+  read_more_wait_time: 5000
 
 config :logger,
   level: :warn

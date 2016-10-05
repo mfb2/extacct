@@ -7,7 +7,8 @@ config :extacct, :intacct_api,
   sender_password: "test_sender_password",
   user_id: "test_user",
   company_id: "test_company",
-  user_password: "test_user_password"
+  user_password: "test_user_password",
+  read_more_wait_time: 0
 
 config :logger,
   level: :error

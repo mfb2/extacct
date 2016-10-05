@@ -39,9 +39,28 @@ defmodule Extacct.API.Gateway.HTTPResponseHandler do
   def extract_response({'response', _, body}),                               do: body
   def extract_operation([{'control', _, _}, {'operation', _, operation}]),   do: operation
   def extract_result([{'authentication', _, _}, {'result', _, result}]),     do: result
-  def extract_data([{'status', _, _}, {'function', _, _}, {'controlid', _, _}, {'listtype', [{'total', total}, {'end', last_record}, {'start', first_record}], _}, {'data', _, data}]), do: data
-  def extract_data([{'status', _, _}, {'function', _, _}, {'controlid', _, _}, {'data', _, data}]),   do: data
-  def extract_data([{'status', _, _}, {'function', _, _}, {'controlid', _, _}, {'errormessage', _, error}]), do: error
+  def extract_data(
+    [
+      {'status', _, _},
+      {'function', _, _},
+      {'controlid', _, _},
+      {'listtype', [{'total', _total}, {'end', _last_record}, {'start', _first_record}], _},
+      {'data', _, data}
+    ]), do: data
+  def extract_data(
+    [
+      {'status', _, _},
+      {'function', _, _},
+      {'controlid', _, _},
+      {'data', _, data}
+    ]), do: data
+  def extract_data(
+    [
+      {'status', _, _},
+      {'function', _, _},
+      {'controlid', _, _},
+      {'errormessage', _, error}
+    ]), do: error
 
   def normalize_response(data_blob) do
     data_blob
