@@ -8,8 +8,8 @@ defmodule Extacct.API.GatewayMock do
     cond do
       xml =~ "GenServer Test Report Results" -> [report_results: report_status(:results)]
       xml =~ "GenServer Test Report End"     -> [report_results: report_status(:completed)]
-      xml =~ "Rando Report"                  -> {:report_submitted, report_id: "random_string"}
-      xml =~ "Broken Report"                 -> {:error, "Invalid Report"}
+      xml =~ "Rando Report"                  -> [report_results: report_status(:results)]
+      xml =~ "Broken Report"                 -> generate_report_error(:xml, "Broken Report")
     end
   end
   def process(xml, :read_more) do
@@ -17,23 +17,27 @@ defmodule Extacct.API.GatewayMock do
       xml =~ @results_report_id ->
         generate_report_contents(:xml)
       xml =~ @completed_report_id ->
-        generate_report_error(:xml)
+        generate_report_error(:xml, @completed_report_id)
       true ->
         generate_report_contents(:json)
     end
   end
-  def process(_xml, :read_by_name),  do: object_map
-  def process(_xml, :read_by_query), do: object_map
-  def process(_xml, :read),          do: object_map
+  def process(_xml, :read_by_name),  do: object_list
+  def process(_xml, :read_by_query), do: object_list
+  def process(_xml, :read),          do: object_list
+  def process(_xml, :get_list),      do: object_list(:get_list)
 
   defp report_status(:results),   do: [reportid: @results_report_id,   status: @pending_status]
   defp report_status(:completed), do: [reportid: @completed_report_id, status: @pending_status]
 
-  defp object_map, do:
-    %{
-      "ENTRY_DATE" => "09/16/2016",
-      "RECORDNO" => "1000"
-    }
+  defp object_list, do:
+    [glentry: [recordno: "1000", entry_date: "09/16/2016"]]
+  defp object_list(:get_list), do:
+    [
+      glentry: [key: "1", datecreated: "09/16/2016"],
+      glentry: [key: "2", datecreated: "09/16/2016"],
+    ]
+
   defp generate_report_contents(:json), do:
     %{
       "0" => %{
@@ -63,13 +67,13 @@ defmodule Extacct.API.GatewayMock do
     ]
   ]
 
-  defp generate_report_error(:xml), do:
+  defp generate_report_error(:xml, report_name), do:
   [
     error:
     [
       errno: "readMore failed",
       description: nil,
-      description2: "Results for reportId xyz789 do not exist.",
+      description2: "Results for reportId #{report_name} do not exist.",
       correction: nil
     ]
   ]

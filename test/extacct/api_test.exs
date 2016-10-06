@@ -1,12 +1,11 @@
 defmodule Extacct.APITest do
   use ExUnit.Case
   alias Extacct.API
-  doctest Extacct.API
 
   @report_name "Rando Report"
   @bad_report_name "Broken Report"
   @report_id_key "REPORTID"
-  @report_id_value "random_string"
+  @report_id_value "123"
   @report_record_zero "0"
   @report_record_one "1"
   @report_status_key "STATUS"
@@ -16,8 +15,8 @@ defmodule Extacct.APITest do
   @object_query "ENTRY_DATE > '09/01/2016'"
 
   test "can readReport from Extacct API" do
-    {:read_report, {:report_submitted, response_content}} = API.read_report(@report_name)
-    assert Keyword.get(response_content, :report_id) == @report_id_value
+    {:read_report, response_content} = API.read_report(@report_name)
+    assert response_content == [report_results: [reportid: "abc123", status: "PENDING"]]
   end
 
   test "can readMore from Extacct API" do
@@ -71,9 +70,35 @@ defmodule Extacct.APITest do
   end
 
   defp verify_object_data(object_data), do:
-    assert object_data == %{"ENTRY_DATE" => "09/16/2016", "RECORDNO" => "1000"}
+    assert object_data == [glentry: [recordno: "1000", entry_date: "09/16/2016"]]
 
   test "bad requests return an error" do
-    assert {:read_report, {:error, "Invalid Report"}} == API.read_report(@bad_report_name)
+    assert expected_bad_report_response == API.read_report(@bad_report_name)
   end
+
+  defp expected_bad_report_response, do:
+    {
+      :read_report,
+      [
+        error:
+        [
+          errno: "readMore failed",
+          description: nil,
+          description2: "Results for reportId #{@bad_report_name} do not exist.",
+          correction: nil
+        ]
+      ]
+    }
+
+  test "can get a list of entries from the Extacct API" do
+    assert expected_get_list_results == API.get_list(@object)
+  end
+
+  defp expected_get_list_results, do:
+    {:get_list,
+      [
+        glentry: [key: "1", datecreated: "09/16/2016"],
+        glentry: [key: "2", datecreated: "09/16/2016"],
+      ]
+    }
 end
