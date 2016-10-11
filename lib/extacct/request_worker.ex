@@ -9,10 +9,8 @@ defmodule Extacct.RequestWorker do
   # Client API
   #############################################################################
 
-  def read(object, keys, fields, handler),           do: start([request: {:read, object, keys, fields}, response_handler: handler])
-  def read_by_name(object, keys, fields, handler),   do: start([request: {:read_by_name, object, keys, fields}, response_handler: handler])
-  def read_by_query(object, query, fields, handler), do: start([request: {:read_by_query, object, query, fields}, response_handler: handler])
-  def read_report(report_name, handler),             do: start([request: {:read_report, report_name}, response_handler: handler])
+  def read_report(report_name, handler), do: start([request: {:read_report, report_name}, response_handler: handler])
+  def get_list(object, handler),         do: start([request: {:get_list, object},         response_handler: handler])
 
   #############################################################################
   # Server API
@@ -22,57 +20,17 @@ defmodule Extacct.RequestWorker do
     GenServer.start(__MODULE__, state)
   end
 
-  def init([request: {:read, object, keys, fields}, response_handler: handler]) do
-    Logger.debug ":init :read"
-    send(self, {:read, object, keys, fields})
-    {:ok, [response_handler: handler]}
-  end
-  def init([request: {:read_by_name, object, keys, fields}, response_handler: handler]) do
-    Logger.debug ":init :read_by_name"
-    send(self, {:read_by_name, object, keys, fields})
-    {:ok, [response_handler: handler]}
-  end
-  def init([request: {:read_by_query, object, keys, fields}, response_handler: handler]) do
-    Logger.debug ":init :read_by_query"
-    send(self, {:read_by_query, object, keys, fields})
-    {:ok, [response_handler: handler]}
-  end
   def init([request: {:read_report, report_name}, response_handler: handler]) do
     Logger.debug ":init :read_report"
     send(self, {:generate_report, report_name})
     {:ok, [response_handler: handler]}
   end
-
-  def handle_info({:read, object, keys, fields}, [response_handler: handler] = state) do
-    Logger.debug ":handle_info :read, object: #{inspect object}, keys: #{inspect keys}, fields: #{inspect fields}"
-    {_status, data} = API.read(object, keys, fields)
-
-    send_to_handler(handler, :read, data)
-    # TODO: Remove this comment!
-    # send(self, {status, data})
-
-    {:noreply, state}
+  def init([request: {:get_list, object}, response_handler: handler]) do
+    Logger.debug ":init :get_list"
+    send(self, {:generate_list, object})
+    {:ok, [response_handler: handler]}
   end
-  def handle_info({:read_by_name, object, keys, fields}, [response_handler: handler] = state) do
-    Logger.debug ":handle_info :read_by_name, object: #{inspect object}, keys: #{inspect keys}, fields: #{inspect fields}"
-    {_status, data} = API.read_by_name(object, keys, fields)
 
-    send_to_handler(handler, :read_by_name, data)
-    # TODO: Remove this comment!
-    # send(self, {status, data})
-
-    {:noreply, state}
-  end
-  def handle_info({:read_by_query, object, query, fields}, [response_handler: handler] = state) do
-    Logger.debug ":handle_info :read_by_query, object: #{inspect object}, query: #{inspect query}, fields: #{inspect fields}"
-    {_status, data} = API.read_by_query(object, query, fields)
-
-    send_to_handler(handler, :read_by_query, data)
-    # TODO: Remove this comment!
-    # send(self, {status, data})
-
-    {:noreply, state}
-  end
   def handle_info({:generate_report, report_name}, [response_handler: handler] = state) do
     Logger.debug ":generate_report #{inspect report_name}"
     case API.read_report(report_name) do
@@ -101,6 +59,49 @@ defmodule Extacct.RequestWorker do
         {:stop, :normal, []}
     end
   end
+  def handle_info({:generate_list, object}, [response_handler: handler] = state) do
+    Logger.debug ":generate_list #{inspect object}"
+    case API.get_list(object, get_list_size) do
+      {:get_list, [record_metadata: record_metadata, records: data]} ->
+        Logger.debug ":get_list data received: #{inspect data}"
+        send_to_handler(handler, :get_list_results, data)
+        send_check_get_list(object, record_metadata)
+        {:noreply, state}
+      {:get_list, unexpected_result} ->
+        Logger.warn ":check_report halted; received: #{inspect unexpected_result}"
+        send_to_handler(handler, :get_list_error, object)
+        {:stop, :normal, []}
+    end
+  end
+  def handle_info({:check_get_list,
+                  object,
+                  [record_metadata: [total: total, last_record: last_record, first_record: first_record]]},
+                  [response_handler: handler] = state) do
+    Logger.debug ":check_get_list #{inspect object}, total: #{total}, last_record: #{last_record}, first_record: #{first_record} "
+
+    start_record = last_record + 1
+    case API.get_list(object, start_record, get_list_size) do
+      {:get_list, [record_metadata: record_metadata, records: data]} ->
+        Logger.debug ":get_list data received: #{inspect data}"
+
+        send_to_handler(handler, :get_list_results, data)
+        next_record = case Keyword.get(record_metadata, :last_record) do
+          nil   -> raise CaseClauseError, "Expected :last_record, got nil"
+          value -> value + 1
+        end
+
+        cond do
+          next_record < total ->
+            send_check_get_list(object, record_metadata)
+            {:noreply, state}
+          next_record >= total ->
+            halt_check_get_list(object, :get_list_end, handler)
+        end
+      {:get_list, unexpected_result} ->
+        Logger.warn ":check_get_list halted; received: #{inspect unexpected_result}"
+        halt_check_get_list(object, :get_list_error, handler)
+    end
+  end
 
   defp send_to_handler(handler, message_type, message_payload) do
     send(handler, {message_type, message_payload})
@@ -111,5 +112,16 @@ defmodule Extacct.RequestWorker do
     Logger.debug "sent :check_report message for report_id: #{report_id}"
   end
 
+  defp send_check_get_list(object, record_metadata) do
+    Process.send_after(self, {:check_get_list, object, [record_metadata: record_metadata]}, read_more_wait_time)
+    Logger.debug "sent :check_get_list message for object: #{object}"
+  end
+
+  defp halt_check_get_list(object, status, handler) do
+    send_to_handler(handler, status, object)
+    {:stop, :normal, []}
+  end
+
+  defp get_list_size,       do: env_var(:get_list_size)
   defp read_more_wait_time, do: env_var(:read_more_wait_time)
 end

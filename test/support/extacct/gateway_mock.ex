@@ -3,6 +3,9 @@ defmodule Extacct.API.GatewayMock do
   @results_report_id   "abc123"
   @completed_report_id "xyz789"
   @pending_status      "PENDING"
+  @object_start        "glentry"
+  @object_end          "glaccount"
+  @total 3
 
   def process(xml, :read_report) do
     cond do
@@ -25,17 +28,35 @@ defmodule Extacct.API.GatewayMock do
   def process(_xml, :read_by_name),  do: object_list
   def process(_xml, :read_by_query), do: object_list
   def process(_xml, :read),          do: object_list
-  def process(_xml, :get_list),      do: object_list(:get_list)
+  def process(xml, :get_list) do
+    cond do
+      xml =~ @object_start -> object_list(:get_list, :start)
+      xml =~ @object_end   -> object_list(:get_list, :end)
+    end
+  end
 
   defp report_status(:results),   do: [reportid: @results_report_id,   status: @pending_status]
   defp report_status(:completed), do: [reportid: @completed_report_id, status: @pending_status]
 
   defp object_list, do:
     [glentry: [recordno: "1000", entry_date: "09/16/2016"]]
-  defp object_list(:get_list), do:
+  defp object_list(:get_list, :start), do:
     [
-      glentry: [key: "1", datecreated: "09/16/2016"],
-      glentry: [key: "2", datecreated: "09/16/2016"],
+      record_metadata: [total: @total, last_record: 1, first_record: 0],
+      records:
+      [
+        glentry: [key: "1", datecreated: "09/16/2016"],
+        glentry: [key: "2", datecreated: "09/16/2016"],
+      ]
+    ]
+  defp object_list(:get_list, :end), do:
+    [
+      record_metadata: [total: @total, last_record: 2, first_record: 1],
+      records:
+      [
+        glentry: [key: "2", datecreated: "09/16/2016"],
+        glentry: [key: "3", datecreated: "09/16/2016"],
+      ]
     ]
 
   defp generate_report_contents(:json), do:

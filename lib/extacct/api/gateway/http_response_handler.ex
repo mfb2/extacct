@@ -1,4 +1,5 @@
 defmodule Extacct.API.Gateway.HTTPResponseHandler do
+  require Logger
 
   def handle({:error, %HTTPoison.Error{reason: reason}}), do:
     {:error, reason}
@@ -27,6 +28,7 @@ defmodule Extacct.API.Gateway.HTTPResponseHandler do
   defp trim(decoded_body) when is_map(decoded_body),  do: decoded_body
 
   def decode_xml(body) do
+    Logger.debug "XML to be processed: #{body}"
     :erlsom.simple_form(body)
     |> elem(1)
     |> extract_response
@@ -42,11 +44,27 @@ defmodule Extacct.API.Gateway.HTTPResponseHandler do
   def extract_data(
     [
       {'status', _, _},
-      {'function', _, _},
+      {'function', _, ['get_list']},
       {'controlid', _, _},
-      {'listtype', [{'total', _total}, {'end', _last_record}, {'start', _first_record}], _},
+      {'listtype',
+       [
+         {'total', total},
+         {'end', last_record},
+         {'start', first_record}
+       ], _},
       {'data', _, data}
-    ]), do: data
+    ]) do
+    [
+      {:record_metadata, [],
+        [
+          {:total,        [], generate_number(total)},
+          {:last_record,  [], generate_number(last_record)},
+          {:first_record, [], generate_number(first_record)}
+        ]
+      },
+      {:records, [], data}
+    ]
+  end
   def extract_data(
     [
       {'status', _, _},
@@ -61,6 +79,9 @@ defmodule Extacct.API.Gateway.HTTPResponseHandler do
       {'controlid', _, _},
       {'errormessage', _, error}
     ]), do: error
+
+  def generate_number(entry), do:
+    entry |> to_string |> Integer.parse |> elem(0)
 
   def normalize_response(data_blob) do
     data_blob
@@ -81,6 +102,8 @@ defmodule Extacct.API.Gateway.HTTPResponseHandler do
     |> String.to_atom
   end
 
+  def generate_value(value) when is_integer(value),   do: value
+  def generate_value(value) when is_bitstring(value), do: to_string(value)
   def generate_value(value) do
     value = Enum.map(value, &handle_value(&1))
     case length(value) do

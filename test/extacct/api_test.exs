@@ -13,6 +13,9 @@ defmodule Extacct.APITest do
   @object "GLENTRY"
   @object_name "Ledger Entry"
   @object_query "ENTRY_DATE > '09/01/2016'"
+  @total 3
+  @last_record 1
+  @first_record 0
 
   test "can readReport from Extacct API" do
     {:read_report, response_content} = API.read_report(@report_name)
@@ -97,8 +100,12 @@ defmodule Extacct.APITest do
   defp expected_get_list_results, do:
     {:get_list,
       [
-        glentry: [key: "1", datecreated: "09/16/2016"],
-        glentry: [key: "2", datecreated: "09/16/2016"],
+        record_metadata: [total: @total, last_record: @last_record, first_record: @first_record],
+        records:
+        [
+          glentry: [key: "1", datecreated: "09/16/2016"],
+          glentry: [key: "2", datecreated: "09/16/2016"],
+        ]
       ]
     }
 end

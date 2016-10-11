@@ -14,24 +14,10 @@ defmodule Extacct.RequestWorkerTest do
   @report_status_value   "DONE"
   @all_keys              []
   @all_fields            "*"
-  @object                "GLENTRY"
+  @object_start          "GLENTRY"
+  @object_end            "GLACCOUNT"
   @object_name           "Ledger Entry"
   @object_query          "ENTRY_DATE > '09/01/2016'"
-
-  test "can issue read command to API request worker" do
-    RequestWorker.read(@object, @all_keys, @all_fields, self)
-    assert_receive {:read, _results}
-  end
-
-  test "can issue readByName command to API request worker" do
-    RequestWorker.read_by_name(@object, @all_keys, @object_name, self)
-    assert_receive {:read_by_name, _results}
-  end
-
-  test "can issue readByQuery command to API request worker" do
-    RequestWorker.read_by_query(@object, @all_keys, @object_query, self)
-    assert_receive {:read_by_query, _results}
-  end
 
   test "can issue readReport command to API request worker and receive results" do
     RequestWorker.read_report(@results_report_name, self)
@@ -41,6 +27,16 @@ defmodule Extacct.RequestWorkerTest do
   test "can issue readReport command to API request worker and reach end of the report" do
     RequestWorker.read_report(@completed_report_name, self)
     assert_receive {:report_end, _report_id}
+  end
+
+  test "can issue get_list command to API request worker and receive results" do
+    RequestWorker.get_list(@object_start, self)
+    assert_receive {:get_list_results, _record_metadata}
+  end
+
+  test "can issue get_list command to API request worker and reach end of results" do
+    RequestWorker.get_list(@object_end, self)
+    assert_receive {:get_list_end, _record_metadata}
   end
 
 end

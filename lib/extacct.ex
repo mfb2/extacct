@@ -149,17 +149,12 @@ defmodule Extacct do
 
     Examples: `"GLENTRY"`, `"GLACCOUNT"`, etc.
 
-    * `max_list_size` (Optional) - The maximum number of entries to return in the response message.
-    Must be less than 1000.
-
-  ## Examples
-
-      iex> Extacct.get_list("GLENTRY")
-      [glentry: [key: "1", datecreated: "09/16/2016"], glentry: [key: "2", datecreated: "09/16/2016"]]
+    * `handler` - A handler for processing records returned by the Intacct API.
+    Must conform to the behaviour specified in the `GetListHandler` module.
 
   """
-  @spec get_list(String.t, integer) :: [key: list | String.t]
-  def get_list(object, max_list_size \\ @max_list_size), do:
-    elem(API.get_list(object, max_list_size), 1)
+  @spec get_list(String.t, pid) :: [key: list | String.t]
+  def get_list(object, handler), do:
+    RequestWorker.get_list(object, handler)
 
 end
