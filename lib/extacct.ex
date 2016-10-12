@@ -37,7 +37,7 @@ defmodule Extacct do
   """
   @spec read(String.t, list, list) :: [key: list | String.t]
   def read(object, keys, fields \\ @all_fields), do:
-    elem(API.read(object, keys, fields), 1)
+    elem(API.read(object, keys, fields), 3)
 
   @doc """
   Read an object by name from the Intacct API.
@@ -66,7 +66,7 @@ defmodule Extacct do
   """
   @spec read_by_name(String.t, list, list) :: [key: list | String.t]
   def read_by_name(object, keys, fields \\ @all_fields), do:
-    elem(API.read_by_name(object, keys, fields), 1)
+    elem(API.read_by_name(object, keys, fields), 3)
 
   @doc """
   Read an object by query from the Intacct API.
@@ -96,7 +96,7 @@ defmodule Extacct do
   """
   @spec read_by_query(String.t, String.t, list) :: [key: list | String.t]
   def read_by_query(object, query, fields \\ @all_fields), do:
-    elem(API.read_by_query(object, query, fields), 1)
+    elem(API.read_by_query(object, query, fields), 3)
 
   @doc """
   Read additional data from the Intacct API.
@@ -119,7 +119,7 @@ defmodule Extacct do
   """
   @spec read_more(:object | :view | :reportId, String.t) :: [key: list | String.t]
   def read_more(method, identifier), do:
-    elem(API.read_more(method, identifier), 1)
+    elem(API.read_more(method, identifier), 3)
 
   @doc """
   Read a custom report from the Intacct API.

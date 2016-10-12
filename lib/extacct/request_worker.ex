@@ -1,9 +1,8 @@
 defmodule Extacct.RequestWorker do
   use GenServer
-  require Logger
-  import Extacct.EnvironmentHelper
-
   alias Extacct.API
+  import Extacct.EnvironmentHelper
+  require Logger
 
   #############################################################################
   # Client API
@@ -33,12 +32,13 @@ defmodule Extacct.RequestWorker do
 
   def handle_info({:generate_report, report_name}, [response_handler: handler] = state) do
     Logger.debug ":generate_report #{inspect report_name}"
+
     case API.read_report(report_name) do
-      {:read_report, [report_results: [reportid: report_id, status: _status]]} ->
+      {:read_report, _control_id, _metadata, [report_results: [reportid: report_id, status: _status]]} ->
         Logger.debug ":generate_report #{inspect report_name}"
         send_check_report_message(report_id)
         {:noreply, state}
-      unexpected_result ->
+      {:read_report, _control_id, _metadata, unexpected_result} ->
         message = ":generate_report failed!  received: #{inspect unexpected_result}"
         Logger.error message
         send_to_handler(handler, :report_error, message)
@@ -47,13 +47,14 @@ defmodule Extacct.RequestWorker do
   end
   def handle_info({:check_report, report_id}, [response_handler: handler] = state) do
     Logger.debug ":check_report #{inspect report_id}"
+
     case API.read_more(:reportId, report_id) do
-      {:read_more, [report: data]} ->
+      {:read_more, _control_id, _metadata, [report: data]} ->
         Logger.debug ":read_more data received: #{inspect data}"
         send_to_handler(handler, :report_results, data)
         send_check_report_message(report_id)
         {:noreply, state}
-      {:read_more, unexpected_result} ->
+      {:read_more, _control_id, _metadata, unexpected_result} ->
         Logger.warn ":check_report halted; received: #{inspect unexpected_result}"
         send_to_handler(handler, :report_end, report_id)
         {:stop, :normal, []}
@@ -61,65 +62,76 @@ defmodule Extacct.RequestWorker do
   end
   def handle_info({:generate_list, object}, [response_handler: handler] = state) do
     Logger.debug ":generate_list #{inspect object}"
+
     case API.get_list(object, get_list_size) do
-      {:get_list, [record_metadata: record_metadata, records: data]} ->
+      {:get_list, _control_id, %{status: :success} = metadata, data} ->
         Logger.debug ":get_list data received: #{inspect data}"
         send_to_handler(handler, :get_list_results, data)
-        send_check_get_list(object, record_metadata)
-        {:noreply, state}
-      {:get_list, unexpected_result} ->
-        Logger.warn ":check_report halted; received: #{inspect unexpected_result}"
+        send_check_get_list(object, metadata, state)
+      {:get_list, _control_id, _metadata, unexpected_result} ->
+        Logger.warn ":generate_list halted; received: #{inspect unexpected_result}"
         send_to_handler(handler, :get_list_error, object)
-        {:stop, :normal, []}
+        halt_check_get_list(object, :get_list_error, handler, unexpected_result)
     end
   end
-  def handle_info({:check_get_list,
-                  object,
-                  [record_metadata: [total: total, last_record: last_record, first_record: first_record]]},
-                  [response_handler: handler] = state) do
-    Logger.debug ":check_get_list #{inspect object}, total: #{total}, last_record: #{last_record}, first_record: #{first_record} "
+  def handle_info({:check_get_list, object, metadata}, [response_handler: handler] = state) do
+    Logger.debug """
+      handle_info::check_get_list #{inspect object},
+        total: #{metadata.total},
+        last_record: #{metadata.last_record},
+        first_record: #{metadata.first_record}
+      """
 
-    start_record = last_record + 1
+    start_record = metadata.last_record + 1
     case API.get_list(object, start_record, get_list_size) do
-      {:get_list, [record_metadata: record_metadata, records: data]} ->
+      {:get_list, _control_id, %{status: :success} = metadata, data} ->
         Logger.debug ":get_list data received: #{inspect data}"
 
         send_to_handler(handler, :get_list_results, data)
-        next_record = case Keyword.get(record_metadata, :last_record) do
-          nil   -> raise CaseClauseError, "Expected :last_record, got nil"
-          value -> value + 1
-        end
+        check_get_list(object, metadata, state)
 
-        cond do
-          next_record < total ->
-            send_check_get_list(object, record_metadata)
-            {:noreply, state}
-          next_record >= total ->
-            halt_check_get_list(object, :get_list_end, handler)
-        end
-      {:get_list, unexpected_result} ->
-        Logger.warn ":check_get_list halted; received: #{inspect unexpected_result}"
-        halt_check_get_list(object, :get_list_error, handler)
+      {:get_list, _control_id, _metadata, unexpected_result} ->
+        Logger.error ":check_get_list halted; received: #{inspect unexpected_result}"
+        halt_check_get_list(object, :get_list_error, handler, unexpected_result)
     end
   end
 
-  defp send_to_handler(handler, message_type, message_payload) do
-    send(handler, {message_type, message_payload})
-  end
-
+  @spec send_check_report_message(String.t) :: any
   defp send_check_report_message(report_id) do
     Process.send_after(self, {:check_report, report_id}, read_more_wait_time)
     Logger.debug "sent :check_report message for report_id: #{report_id}"
   end
 
-  defp send_check_get_list(object, record_metadata) do
-    Process.send_after(self, {:check_get_list, object, [record_metadata: record_metadata]}, read_more_wait_time)
-    Logger.debug "sent :check_get_list message for object: #{object}"
+  @spec check_get_list(String.t, struct, list) :: {:noreply, list} | {:stop, :normal, list} | {:stop, any, list}
+  defp check_get_list(object, metadata, [response_handler: handler] = state) do
+
+    next_record = metadata.last_record + 1
+    cond do
+      next_record <  metadata.total -> send_check_get_list(object, metadata, state)
+      next_record >= metadata.total -> halt_check_get_list(object, :get_list_end, handler)
+    end
   end
 
-  defp halt_check_get_list(object, status, handler) do
-    send_to_handler(handler, status, object)
-    {:stop, :normal, []}
+  @spec send_check_get_list(String.t, map, list) :: {:noreply, list}
+  defp send_check_get_list(object, metadata, state) do
+    Process.send_after(self, {:check_get_list, object, metadata}, read_more_wait_time)
+    Logger.debug "sent :check_get_list message for object: #{object}"
+    {:noreply, state}
+  end
+
+  @spec halt_check_get_list(String.t, :get_list_end | :get_list_error, pid, any) :: {:stop, :normal | any, list}
+  defp halt_check_get_list(object, status, handler, message \\ "") do
+    Logger.debug "Halting Extacct.RequestWorker for #{object}"
+    send_to_handler(handler, status, message)
+    case status do
+      :get_list_end   -> {:stop, :normal, []}
+      :get_list_error -> {:stop, message, []}
+    end
+  end
+
+  @spec send_to_handler(pid, atom, any) :: any
+  defp send_to_handler(handler, message_type, message_payload) do
+    send(handler, {message_type, message_payload})
   end
 
   defp get_list_size,       do: env_var(:get_list_size)

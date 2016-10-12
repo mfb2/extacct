@@ -16,6 +16,7 @@ defmodule Extacct.RequestWorkerTest do
   @all_fields            "*"
   @object_start          "GLENTRY"
   @object_end            "GLACCOUNT"
+  @object_error          "APPAYMENT"
   @object_name           "Ledger Entry"
   @object_query          "ENTRY_DATE > '09/01/2016'"
 
@@ -37,6 +38,11 @@ defmodule Extacct.RequestWorkerTest do
   test "can issue get_list command to API request worker and reach end of results" do
     RequestWorker.get_list(@object_end, self)
     assert_receive {:get_list_end, _record_metadata}
+  end
+
+  test "errors when generating a get_list request are handled correctly" do
+    RequestWorker.get_list(@object_error, self)
+    assert_receive {:get_list_error, _record_metadata}
   end
 
 end

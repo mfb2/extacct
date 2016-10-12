@@ -2,10 +2,11 @@ defmodule Extacct.APITest do
   use ExUnit.Case
   alias Extacct.API
 
+  @control_id "testFunctionId"
   @report_name "Rando Report"
   @bad_report_name "Broken Report"
   @report_id_key "REPORTID"
-  @report_id_value "123"
+  @report_id_value "abc123"
   @report_record_zero "0"
   @report_record_one "1"
   @report_status_key "STATUS"
@@ -18,57 +19,49 @@ defmodule Extacct.APITest do
   @first_record 0
 
   test "can readReport from Extacct API" do
-    {:read_report, response_content} = API.read_report(@report_name)
-    assert response_content == [report_results: [reportid: "abc123", status: "PENDING"]]
+    {:read_report, @control_id, metadata, content} = API.read_report(@report_name)
+    verify_metadata(metadata, :success)
+    verify_report_response(content)
+  end
+
+  def verify_report_response(content) do
+    assert content == [report_results: [reportid: "abc123", status: "PENDING"]]
   end
 
   test "can readMore from Extacct API" do
-    {:read_more, report} = API.read_more(:reportId, @report_id_value)
-
-    verify_report_keys(report)
-    verify_report_values(report)
+    {:read_more, @control_id, metadata, response} = API.read_more(:reportId, @report_id_value)
+    verify_metadata(metadata, :success)
+    verify_report_values(response)
   end
 
-  defp verify_report_keys(report) do
-    keys = Map.keys(report)
-    assert Enum.count(keys) == 3
-    assert Enum.member?(keys, @report_record_zero)
-    assert Enum.member?(keys, @report_record_one)
-    assert Enum.member?(keys, @report_status_key)
-  end
-
-  defp verify_report_values(report), do: Enum.each(report, &verify_report_entry(&1))
-  defp verify_report_entry({@report_status_key, @report_status_value}), do: true
-  defp verify_report_entry({@report_record_zero, report_record_value}), do: verify_report_entry_values(@report_record_zero, report_record_value)
-  defp verify_report_entry({@report_record_one,  report_record_value}), do: verify_report_entry_values(@report_record_one,  report_record_value)
-
-  defp verify_report_entry_values(report_record_key, report_record_value) do
-    verify_report_entry_value(report_record_key, report_record_value, 0)
-    verify_report_entry_value(report_record_key, report_record_value, 1)
-  end
-
-  defp verify_report_entry_value(report_record_key, report_record_value, entry_value_index) do
-    entry_value = get_report_entry_value(report_record_key, report_record_value, entry_value_index)
-    refute is_nil(entry_value)
-    assert entry_value == "RECORD#{report_record_key}VALUE#{entry_value_index}"
-  end
-
-  defp get_report_entry_value(report_record_key, report_record_value, entry_value_index) do
-    Map.get(report_record_value, "RECORD#{report_record_key}COLUMN#{entry_value_index}")
+  defp verify_report_values([report: report]), do: Enum.each(report, &verify_report_entry(&1))
+  defp verify_report_entry(entry) do
+    entry
+    |> elem(1)
+    |> Enum.map(fn
+        {:record0column0, "record0value0"} -> true
+        {:record0column1, "record0value1"} -> true
+        {:record1column0, "record1value0"} -> true
+        {:record1column1, "record1value1"} -> true
+        unrecognized_entry                 -> flunk "Unrecognized report entry: #{unrecognized_entry}"
+    end)
   end
 
   test "can read from Extacct API" do
-    {:read, object_data} = API.read(@object, [])
+    {:read, @control_id, metadata, object_data} = API.read(@object, [])
+    verify_metadata(metadata, :success)
     verify_object_data(object_data)
   end
 
   test "can read by name from Extacct API" do
-    {:read_by_name, object_data} = API.read_by_name(@object, @object_name)
+    {:read_by_name, @control_id, metadata, object_data} = API.read_by_name(@object, @object_name)
+    verify_metadata(metadata, :success)
     verify_object_data(object_data)
   end
 
   test "can read by query from Extacct API" do
-    {:read_by_query, object_data} = API.read_by_query(@object, @object_query)
+    {:read_by_query, @control_id, metadata, object_data} = API.read_by_query(@object, @object_query)
+    verify_metadata(metadata, :success)
     verify_object_data(object_data)
   end
 
@@ -76,36 +69,53 @@ defmodule Extacct.APITest do
     assert object_data == [glentry: [recordno: "1000", entry_date: "09/16/2016"]]
 
   test "bad requests return an error" do
-    assert expected_bad_report_response == API.read_report(@bad_report_name)
+    {:read_report, @control_id, metadata, bad_report_response} = API.read_report(@bad_report_name)
+    verify_metadata(metadata, :failure)
+    verify_bad_report_content(bad_report_response)
+  end
+
+  defp verify_bad_report_content(content) do
+    assert content == expected_bad_report_response
   end
 
   defp expected_bad_report_response, do:
-    {
-      :read_report,
+    [
+      error:
       [
-        error:
-        [
-          errno: "readMore failed",
-          description: nil,
-          description2: "Results for reportId #{@bad_report_name} do not exist.",
-          correction: nil
-        ]
+        errno: "readMore failed",
+        description: nil,
+        description2: "Results for reportId #{@bad_report_name} do not exist.",
+        correction: nil
       ]
-    }
+    ]
 
   test "can get a list of entries from the Extacct API" do
-    assert expected_get_list_results == API.get_list(@object)
+    {:get_list, @control_id, metadata, get_list_response} = API.get_list(@object)
+    verify_metadata(metadata, :success, :get_list)
+    verify_get_list_content(get_list_response)
+  end
+
+  defp verify_get_list_content(content) do
+    assert expected_get_list_results == content
   end
 
   defp expected_get_list_results, do:
-    {:get_list,
-      [
-        record_metadata: [total: @total, last_record: @last_record, first_record: @first_record],
-        records:
-        [
-          glentry: [key: "1", datecreated: "09/16/2016"],
-          glentry: [key: "2", datecreated: "09/16/2016"],
-        ]
-      ]
-    }
+    [
+      glentry: [key: "1", datecreated: "09/16/2016"],
+      glentry: [key: "2", datecreated: "09/16/2016"],
+    ]
+
+  defp verify_metadata(metadata, status, function \\ nil)
+  defp verify_metadata(metadata, status, _function) when is_map(metadata) do
+    assert metadata.status     == status
+  end
+  defp verify_metadata(metadata, status, :get_list) when is_map(metadata) do
+    assert metadata.status       == status
+    assert metadata.total        == @total
+    assert metadata.first_record == @first_record
+    assert metadata.last_record  == @last_record
+  end
+  defp verify_metadata(metadata, _status, _function) do
+    flunk "Expected map of headers, got #{metadata}"
+  end
 end
