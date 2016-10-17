@@ -32,17 +32,32 @@ defmodule Extacct.RequestWorkerTest do
 
   test "can issue get_list command to API request worker and receive results" do
     RequestWorker.get_list(@object_start, self)
-    assert_receive {:get_list_results, _record_metadata}
+    assert_receive {:get_list_results, _results}
   end
 
   test "can issue get_list command to API request worker and reach end of results" do
     RequestWorker.get_list(@object_end, self)
-    assert_receive {:get_list_end, _record_metadata}
+    assert_receive {:get_list_end, _object}
   end
 
   test "errors when generating a get_list request are handled correctly" do
     RequestWorker.get_list(@object_error, self)
-    assert_receive {:get_list_error, _record_metadata}
+    assert_receive {:get_list_error, _error}
+  end
+
+  test "can issue read_by_query command to API request worker and receive results" do
+    RequestWorker.read_by_query(@object_start, @all_keys, @all_fields, self)
+    assert_receive {:query_results, _results}
+  end
+
+  test "can issue read_by_query command to API request worker and reach end of results" do
+    RequestWorker.read_by_query(@object_end, @all_keys, @all_fields, self)
+    assert_receive {:query_end, _result_id}
+  end
+
+  test "errors when generating a read_by_query request are handled correctly" do
+    RequestWorker.read_by_query(@object_error, @all_keys, @all_fields, self)
+    assert_receive {:query_error, _error}
   end
 
 end

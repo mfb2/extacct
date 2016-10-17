@@ -10,16 +10,20 @@ end
 defmodule Extacct.API.GatewayResponse.Headers do
 
   defstruct control_id: nil,
+             result_id: :not_applicable,
                 status: :unknown,
                  total: :not_applicable,
            last_record: :not_applicable,
-          first_record: :not_applicable
+          first_record: :not_applicable,
+     records_remaining: :not_applicable
 
   @type t :: %__MODULE__{control_id: String.t,
+                          result_id: String.t,
                              status: :unknown | :success | :failure | :pending,
                               total: integer | :not_applicable,
                         last_record: integer | :not_applicable,
-                       first_record: integer | :not_applicable}
+                       first_record: integer | :not_applicable,
+                  records_remaining: integer | :not_applicable}
   defimpl Collectable, for: Extacct.API.GatewayResponse.Headers do
     def into(original) do
       {

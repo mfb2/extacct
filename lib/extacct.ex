@@ -84,19 +84,41 @@ defmodule Extacct do
 
     Example: `[100, 101, 102]`
 
+    * `handler` - A handler for processing records returned by the Intacct API.
+    Must conform to the behaviour specified in the `QueryHandler` module.
+
+  """
+  @spec read_by_query(String.t, String.t, pid) :: [key: list | String.t]
+  def read_by_query(object, query, handler), do:
+    read_by_query(object, query, @all_fields, handler)
+
+  @doc """
+  Read an object by query from the Intacct API.
+
+  Returns a list of entries corresponding to the object.
+
+  ## Arguments
+
+    * `object` - The name of the object to be read from Intacct.
+
+    Examples: `"GLENTRY"`, `"GLACCOUNT"`, etc.
+
+    * `query` - A query that conforms to the specifications provided by Intacct.
+    See the [developer documentation for `ReadByQuery()`](https://developer.intacct.com/wiki/readbyquery).
+
+    Example: `[100, 101, 102]`
+
     * `fields` (Optional) - A list of fields requested back from the Intacct for that object. 
 
     Example: `["ENTRY_DATE", "RECORDNO"]`
 
-  ## Examples
-
-      iex> Extacct.read_by_query "GLENTRY", "ENTRY_DATE > '09/01/2016'"
-      [glentry: [recordno: "1000", entry_date: "09/16/2016"]]
+    * `handler` - A handler for processing records returned by the Intacct API.
+    Must conform to the behaviour specified in the `QueryHandler` module.
 
   """
-  @spec read_by_query(String.t, String.t, list) :: [key: list | String.t]
-  def read_by_query(object, query, fields \\ @all_fields), do:
-    elem(API.read_by_query(object, query, fields), 3)
+  @spec read_by_query(String.t, String.t, list, pid) :: [key: list | String.t]
+  def read_by_query(object, query, fields, handler), do:
+    RequestWorker.read_by_query(object, query, fields, handler)
 
   @doc """
   Read additional data from the Intacct API.

@@ -3,11 +3,7 @@ defmodule Extacct.API.Gateway.XmlTranslator do
 
   def decode_xml(body) do
     Logger.debug "XML to be processed: #{body}"
-    results = body
-    |> transform_xml
-    |> extract_response
-    |> extract_operation
-    |> extract_result
+    results = extract_results(body)
 
     headers = results
     |> extract_metadata
@@ -17,6 +13,14 @@ defmodule Extacct.API.Gateway.XmlTranslator do
     |> normalize_response
 
     {:endpoint_response, [headers, content]}
+  end
+
+  def extract_results(body) do
+    body
+    |> transform_xml
+    |> extract_response
+    |> extract_operation
+    |> extract_result
   end
 
   def transform_xml(body) do
@@ -58,12 +62,55 @@ defmodule Extacct.API.Gateway.XmlTranslator do
       {'status', _, _},
       {'function', _, _},
       {'controlid', _, control_id},
+      {'data',
+       [
+         {'resultId', result_id},
+         {'numremaining', records_remaining},
+         {'totalcount', total},
+         {'count', _count},
+         {'listtype', _listtype}
+       ], _data}
+    ]), do:
+    {
+      :response_metadata,
+      [
+               control_id: to_string(control_id),
+                result_id: to_string(result_id),
+                   status: :success,
+                    total: generate_number(total),
+              last_record: :not_applicable,
+             first_record: :not_applicable,
+        records_remaining: generate_number(records_remaining),
+      ]
+    }
+  def extract_metadata(
+    [
+      {'status', _, _},
+      {'function', _, _},
+      {'controlid', _, control_id},
+      {'data', [{'count', count}, {'listtype', _}], _}
+    ]), do:
+    {
+      :response_metadata,
+      [
+          control_id: to_string(control_id),
+              status: :success,
+               total: generate_number(count),
+         last_record: :not_applicable,
+        first_record: :not_applicable
+      ]
+    }
+  def extract_metadata(
+    [
+      {'status', _, _},
+      {'function', _, _},
+      {'controlid', _, control_id},
       {'data', _, _}
     ]), do:
     {
       :response_metadata,
       [
-          control_id: control_id,
+          control_id: to_string(control_id),
               status: :success,
                total: :not_applicable,
          last_record: :not_applicable,
@@ -80,7 +127,7 @@ defmodule Extacct.API.Gateway.XmlTranslator do
     {
       :response_metadata,
       [
-          control_id: control_id,
+          control_id: to_string(control_id),
               status: :failure,
                total: :not_applicable,
          last_record: :not_applicable,
@@ -103,7 +150,7 @@ defmodule Extacct.API.Gateway.XmlTranslator do
     {
       :response_metadata,
       [
-          control_id: control_id,
+          control_id: to_string(control_id),
               status: :success,
                total: generate_number(total),
          last_record: generate_number(last_record),

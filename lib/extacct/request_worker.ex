@@ -4,12 +4,20 @@ defmodule Extacct.RequestWorker do
   import Extacct.EnvironmentHelper
   require Logger
 
+  @all_fields "*"
+
   #############################################################################
   # Client API
   #############################################################################
 
-  def read_report(report_name, handler), do: start([request: {:read_report, report_name}, response_handler: handler])
-  def get_list(object, handler),         do: start([request: {:get_list, object},         response_handler: handler])
+  def read_by_query(object, query, fields, handler), do:
+    start([request: {:read_by_query, object, query, fields}, response_handler: handler])
+
+  def read_report(report_name, handler), do:
+    start([request: {:read_report, report_name}, response_handler: handler])
+
+  def get_list(object, handler), do:
+    start([request: {:get_list, object}, response_handler: handler])
 
   #############################################################################
   # Server API
@@ -19,6 +27,11 @@ defmodule Extacct.RequestWorker do
     GenServer.start(__MODULE__, state)
   end
 
+  def init([request: {:read_by_query, object, query, fields}, response_handler: handler]) do
+    Logger.debug ":init :read_by_query"
+    send(self, {:run_read_by_query, object, query, fields})
+    {:ok, [response_handler: handler]}
+  end
   def init([request: {:read_report, report_name}, response_handler: handler]) do
     Logger.debug ":init :read_report"
     send(self, {:generate_report, report_name})
@@ -28,6 +41,50 @@ defmodule Extacct.RequestWorker do
     Logger.debug ":init :get_list"
     send(self, {:generate_list, object})
     {:ok, [response_handler: handler]}
+  end
+
+  def handle_info({:run_read_by_query, object, query, fields}, [response_handler: handler] = state) do
+    Logger.debug ":run_read_by_query #{inspect object}, query: #{inspect query}"
+
+    case API.read_by_query(object, query, fields) do
+      {:read_by_query, _control_id, %{status: :success, records_remaining: 0} = metadata, result} ->
+        Logger.debug ":run_read_by_query completed; metadata: #{inspect metadata}"
+        send_to_handler(handler, :query_results, result)
+        send_to_handler(handler, :query_end, object)
+        {:stop, :normal, []}
+      {:read_by_query, _control_id, %{status: :success, result_id: result_id} = metadata, result} ->
+        Logger.debug ":run_read_by_query received results; metadata: #{inspect metadata}"
+        send_to_handler(handler, :query_results, result)
+        send(self, {:check_read_by_query, result_id})
+        {:noreply, state}
+      {:read_by_query, _control_id, _metadata, unexpected_result} ->
+        Logger.error ":run_read_by_query encountered an error: #{inspect unexpected_result}"
+        send_to_handler(handler, :query_error, unexpected_result)
+        {:stop, unexpected_result, []}
+    end
+  end
+
+  def handle_info({:check_read_by_query, result_id}, [response_handler: handler] = state) do
+    Logger.debug ":check_read_by_query for result_id #{inspect result_id}"
+    case API.read_more(:resultId, result_id) do
+      {:read_more, _control_id, %{result_id: result_id, records_remaining: records_remaining} = _metadata, result} ->
+        Logger.debug ":check_read_by_query for result_id #{result_id} returned data"
+        send_to_handler(handler, :query_results, result)
+        if records_remaining > 0 do
+          Logger.debug "calling :check_read_by_query for result_id #{result_id} for more data"
+          send(self, {:check_read_by_query, result_id})
+          {:noreply, state}
+        else
+          Logger.debug ":check_read_by_query for result_id #{result_id} has exhaused all records, halting process"
+          send_to_handler(handler, :query_end, result_id)
+          {:stop, :normal, []}
+        end
+      {:read_more, _control_id, _metadata, [error: unexpected_result]} ->
+        Logger.debug ":check_read_by_query for result_id #{result_id} halting; received: #{inspect unexpected_result}"
+        send_to_handler(handler, :query_error, unexpected_result)
+        {:stop, unexpected_result, []}
+    end
+
   end
 
   def handle_info({:generate_report, report_name}, [response_handler: handler] = state) do
