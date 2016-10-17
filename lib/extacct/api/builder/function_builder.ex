@@ -53,10 +53,10 @@ defmodule Extacct.API.FunctionBuilder do
   {
     read_type, @no_params,
     [
-      {:object,       @no_params, object        },
-      {:fields,       @no_params, fields        },
-      {:keys,         @no_params, keys          },
-      {:returnFormat, @no_params, return_format },
+      {:object,       @no_params, object                },
+      {:fields,       @no_params, format_values(fields) },
+      {:keys,         @no_params, format_values(keys)   },
+      {:returnFormat, @no_params, return_format         },
     ]
   }
 
@@ -64,10 +64,10 @@ defmodule Extacct.API.FunctionBuilder do
   {
     :readByQuery, @no_params,
     [
-      {:object,       @no_params, object        },
-      {:fields,       @no_params, fields        },
-      {:query,        @no_params, query         },
-      {:returnFormat, @no_params, return_format },
+      {:object,       @no_params, object                },
+      {:fields,       @no_params, format_values(fields) },
+      {:query,        @no_params, query                 },
+      {:returnFormat, @no_params, return_format         },
     ]
   }
 
@@ -92,6 +92,9 @@ defmodule Extacct.API.FunctionBuilder do
   }
 
   defp function_spec(inner_request, control_id), do: {:function, %{controlid: control_id}, [inner_request]}
+
+  defp format_values(values) when is_list(values), do: Enum.join(values, ", ")
+  defp format_values(values),                      do: values
 
   defp return_format, do: env_var(:return_format)
 end
