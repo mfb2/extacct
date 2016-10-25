@@ -10,7 +10,7 @@ defmodule Extacct.QueryHandler do
 
       def handle_info({:query_results, data}  = payload, state), do: handle_query_results(payload, state)
       def handle_info({:query_error, message} = payload, state), do: handle_query_error(payload, state)
-      def handle_info({:query_end, report_id} = payload, state), do: handle_query_end(payload, report_id)
+      def handle_info({:query_end, report_id} = payload, state), do: handle_query_end(payload, state)
     end
   end
 end

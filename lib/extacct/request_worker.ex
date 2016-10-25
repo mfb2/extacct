@@ -51,7 +51,7 @@ defmodule Extacct.RequestWorker do
         Logger.debug ":run_read_by_query completed; metadata: #{inspect metadata}"
         send_to_handler(handler, :query_results, result)
         send_to_handler(handler, :query_end, object)
-        {:stop, :normal, []}
+        {:stop, :normal, state}
       {:read_by_query, _control_id, %{status: :success, result_id: result_id} = metadata, result} ->
         Logger.debug ":run_read_by_query received results; metadata: #{inspect metadata}"
         send_to_handler(handler, :query_results, result)
@@ -60,7 +60,7 @@ defmodule Extacct.RequestWorker do
       {:read_by_query, _control_id, _metadata, unexpected_result} ->
         Logger.error ":run_read_by_query encountered an error: #{inspect unexpected_result}"
         send_to_handler(handler, :query_error, unexpected_result)
-        {:stop, unexpected_result, []}
+        {:stop, unexpected_result, state}
     end
   end
 
@@ -77,12 +77,12 @@ defmodule Extacct.RequestWorker do
         else
           Logger.debug ":check_read_by_query for result_id #{result_id} has exhaused all records, halting process"
           send_to_handler(handler, :query_end, result_id)
-          {:stop, :normal, []}
+          {:stop, :normal, state}
         end
       {:read_more, _control_id, _metadata, [error: unexpected_result]} ->
         Logger.debug ":check_read_by_query for result_id #{result_id} halting; received: #{inspect unexpected_result}"
         send_to_handler(handler, :query_error, unexpected_result)
-        {:stop, unexpected_result, []}
+        {:stop, unexpected_result, state}
     end
 
   end
@@ -99,7 +99,7 @@ defmodule Extacct.RequestWorker do
         message = ":generate_report failed!  received: #{inspect unexpected_result}"
         Logger.error message
         send_to_handler(handler, :report_error, message)
-        {:stop, message, []}
+        {:stop, message, state}
     end
   end
   def handle_info({:check_report, report_id}, [response_handler: handler] = state) do
@@ -128,7 +128,7 @@ defmodule Extacct.RequestWorker do
       {:get_list, _control_id, _metadata, unexpected_result} ->
         Logger.warn ":generate_list halted; received: #{inspect unexpected_result}"
         send_to_handler(handler, :get_list_error, object)
-        halt_check_get_list(object, :get_list_error, handler, unexpected_result)
+        halt_check_get_list(object, :get_list_error, handler, state, unexpected_result)
     end
   end
   def handle_info({:check_get_list, object, metadata}, [response_handler: handler] = state) do
@@ -149,7 +149,7 @@ defmodule Extacct.RequestWorker do
 
       {:get_list, _control_id, _metadata, unexpected_result} ->
         Logger.error ":check_get_list halted; received: #{inspect unexpected_result}"
-        halt_check_get_list(object, :get_list_error, handler, unexpected_result)
+        halt_check_get_list(object, :get_list_error, handler, state, unexpected_result)
     end
   end
 
@@ -165,7 +165,7 @@ defmodule Extacct.RequestWorker do
     next_record = metadata.last_record + 1
     cond do
       next_record <  metadata.total -> send_check_get_list(object, metadata, state)
-      next_record >= metadata.total -> halt_check_get_list(object, :get_list_end, handler)
+      next_record >= metadata.total -> halt_check_get_list(object, :get_list_end, handler, state)
     end
   end
 
@@ -176,13 +176,13 @@ defmodule Extacct.RequestWorker do
     {:noreply, state}
   end
 
-  @spec halt_check_get_list(String.t, :get_list_end | :get_list_error, pid, any) :: {:stop, :normal | any, list}
-  defp halt_check_get_list(object, status, handler, message \\ "") do
+  @spec halt_check_get_list(String.t, :get_list_end | :get_list_error, pid, any, any) :: {:stop, :normal | any, list}
+  defp halt_check_get_list(object, status, handler, state, message \\ "") do
     Logger.debug "Halting Extacct.RequestWorker for #{object}"
     send_to_handler(handler, status, message)
     case status do
-      :get_list_end   -> {:stop, :normal, []}
-      :get_list_error -> {:stop, message, []}
+      :get_list_end   -> {:stop, :normal, state}
+      :get_list_error -> {:stop, message, state}
     end
   end
 

@@ -10,7 +10,7 @@ defmodule Extacct.ReportHandler do
 
       def handle_info({:report_results, data} = payload, state),  do: handle_report_results(payload, state)
       def handle_info({:report_error, message} = payload, state), do: handle_report_error(payload, state)
-      def handle_info({:report_end, report_id} = payload, state), do: handle_report_end(payload, report_id)
+      def handle_info({:report_end, report_id} = payload, state), do: handle_report_end(payload, state)
     end
   end
 end

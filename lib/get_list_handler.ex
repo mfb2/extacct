@@ -10,7 +10,7 @@ defmodule Extacct.GetListHandler do
 
       def handle_info({:get_list_results, data} = payload, state),  do: handle_get_list_results(payload, state)
       def handle_info({:get_list_error, message} = payload, state), do: handle_get_list_error(payload, state)
-      def handle_info({:get_list_end, report_id} = payload, state), do: handle_get_list_end(payload, report_id)
+      def handle_info({:get_list_end, report_id} = payload, state), do: handle_get_list_end(payload, state)
     end
   end
 end
