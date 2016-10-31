@@ -12,6 +12,7 @@ config :extacct, :intacct_api,
   recv_timeout: 60000,
   timeout: 60000,
   read_more_wait_time: 5000,
+  query_page_size: 1000,
   get_list_size: 100
 
 config :logger,

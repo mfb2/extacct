@@ -67,6 +67,7 @@ defmodule Extacct.API.FunctionBuilder do
       {:object,       @no_params, object                },
       {:fields,       @no_params, format_values(fields) },
       {:query,        @no_params, query                 },
+      {:pagesize,     @no_params, query_page_size       },
       {:returnFormat, @no_params, return_format         },
     ]
   }
@@ -96,5 +97,6 @@ defmodule Extacct.API.FunctionBuilder do
   defp format_values(values) when is_list(values), do: Enum.join(values, ", ")
   defp format_values(values),                      do: values
 
-  defp return_format, do: env_var(:return_format)
+  defp query_page_size, do: env_var(:query_page_size)
+  defp return_format,   do: env_var(:return_format)
 end

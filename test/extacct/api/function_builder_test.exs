@@ -11,6 +11,7 @@ defmodule Extacct.FunctionBuilderTest do
   @return_format      "xml"
   @object_name        "GLENTRY"
   @all_fields         "*"
+  @page_size          1000
   @object_entry_date  "09/16/2016"
   @object_record_id   "1000"
   @object_name        "Ledger Entry"
@@ -98,6 +99,7 @@ defmodule Extacct.FunctionBuilderTest do
             {:object,       @no_params, @object_name   },
             {:fields,       @no_params, @all_fields    },
             {:query,        @no_params, @object_query  },
+            {:pagesize,     @no_params, @page_size     },
             {:returnFormat, @no_params, @return_format },
           ]
         }
