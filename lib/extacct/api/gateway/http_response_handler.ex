@@ -12,8 +12,9 @@ defmodule Extacct.API.Gateway.HTTPResponseHandler do
   defp get_message_type(headers) do
     headers_to_map(headers)
     |> case do
-      %{"Content-Type" => "application/json"}             -> :json
-      %{"Content-Type" => "text/xml; encoding=\"UTF-8\""} -> :xml
+      %{"Content-Type" => "application/json"}                           -> :json
+      %{"Content-Type" => "text/xml; encoding=\"UTF-8\""}               -> :xml
+      %{"Content-Type" => "text/xml; encoding=\"UTF-8\";charset=UTF-8"} -> :xml
     end
   end
 
