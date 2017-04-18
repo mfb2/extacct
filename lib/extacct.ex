@@ -3,7 +3,6 @@ defmodule Extacct do
   alias Extacct.RequestWorker
 
   @all_fields "*"
-  @max_list_size "100"
 
   @moduledoc """
   This module provides client-facing functions for interacting with the 

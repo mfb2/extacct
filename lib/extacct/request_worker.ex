@@ -4,8 +4,6 @@ defmodule Extacct.RequestWorker do
   import Extacct.EnvironmentHelper
   require Logger
 
-  @all_fields "*"
-
   #############################################################################
   # Client API
   #############################################################################
@@ -29,17 +27,17 @@ defmodule Extacct.RequestWorker do
 
   def init([request: {:read_by_query, object, query, fields}, response_handler: handler]) do
     Logger.debug ":init :read_by_query"
-    send(self, {:run_read_by_query, object, query, fields})
+    send(self(), {:run_read_by_query, object, query, fields})
     {:ok, [response_handler: handler]}
   end
   def init([request: {:read_report, report_name}, response_handler: handler]) do
     Logger.debug ":init :read_report"
-    send(self, {:generate_report, report_name})
+    send(self(), {:generate_report, report_name})
     {:ok, [response_handler: handler]}
   end
   def init([request: {:get_list, object}, response_handler: handler]) do
     Logger.debug ":init :get_list"
-    send(self, {:generate_list, object})
+    send(self(), {:generate_list, object})
     {:ok, [response_handler: handler]}
   end
 
@@ -55,7 +53,7 @@ defmodule Extacct.RequestWorker do
       {:read_by_query, _control_id, %{status: :success, result_id: result_id} = metadata, result} ->
         Logger.debug ":run_read_by_query received results; metadata: #{inspect metadata}"
         send_to_handler(handler, :query_results, result)
-        send(self, {:check_read_by_query, result_id})
+        send(self(), {:check_read_by_query, result_id})
         {:noreply, state}
       {:read_by_query, _control_id, _metadata, unexpected_result} ->
         Logger.error ":run_read_by_query encountered an error: #{inspect unexpected_result}"
@@ -72,7 +70,7 @@ defmodule Extacct.RequestWorker do
         send_to_handler(handler, :query_results, result)
         if records_remaining > 0 do
           Logger.debug "calling :check_read_by_query for result_id #{result_id} for more data"
-          send(self, {:check_read_by_query, result_id})
+          send(self(), {:check_read_by_query, result_id})
           {:noreply, state}
         else
           Logger.debug ":check_read_by_query for result_id #{result_id} has exhaused all records, halting process"
@@ -120,7 +118,7 @@ defmodule Extacct.RequestWorker do
   def handle_info({:generate_list, object}, [response_handler: handler] = state) do
     Logger.debug ":generate_list #{inspect object}"
 
-    case API.get_list(object, get_list_size) do
+    case API.get_list(object, get_list_size()) do
       {:get_list, _control_id, %{status: :success} = metadata, data} ->
         Logger.debug ":get_list data received: #{inspect data}"
         send_to_handler(handler, :get_list_results, data)
@@ -140,7 +138,7 @@ defmodule Extacct.RequestWorker do
       """
 
     start_record = metadata.last_record + 1
-    case API.get_list(object, start_record, get_list_size) do
+    case API.get_list(object, start_record, get_list_size()) do
       {:get_list, _control_id, %{status: :success} = metadata, data} ->
         Logger.debug ":get_list data received: #{inspect data}"
 
@@ -155,7 +153,7 @@ defmodule Extacct.RequestWorker do
 
   @spec send_check_report_message(String.t) :: any
   defp send_check_report_message(report_id) do
-    Process.send_after(self, {:check_report, report_id}, read_more_wait_time)
+    Process.send_after(self(), {:check_report, report_id}, read_more_wait_time())
     Logger.debug "sent :check_report message for report_id: #{report_id}"
   end
 
@@ -171,7 +169,7 @@ defmodule Extacct.RequestWorker do
 
   @spec send_check_get_list(String.t, map, list) :: {:noreply, list}
   defp send_check_get_list(object, metadata, state) do
-    Process.send_after(self, {:check_get_list, object, metadata}, read_more_wait_time)
+    Process.send_after(self(), {:check_get_list, object, metadata}, read_more_wait_time())
     Logger.debug "sent :check_get_list message for object: #{object}"
     {:noreply, state}
   end

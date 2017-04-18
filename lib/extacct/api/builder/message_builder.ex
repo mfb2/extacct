@@ -49,60 +49,60 @@ defmodule Extacct.API.MessageBuilder do
     functions
     |> request(control_id)
     |> XmlBuilder.generate
-    |> minify
+    |> minify()
   end
 
   def request(functions, control_id), do:
     {
-      :request, no_params, [control(control_id)] ++ [operation(functions)]
+      :request, no_params(), [control(control_id)] ++ [operation(functions)]
     }
 
   def control(control_id), do:
     {
-      :control, no_params,
+      :control, no_params(),
       [
-        {:senderid,          no_params, sender_id   },
-        {:password,          no_params, sender_pw   },
-        {:controlid,         no_params, control_id  },
-        {:uniqueid,          no_params, false       },
-        {:dtdversion,        no_params, dtd_version },
-        {:includewhitespace, no_params, false       },
+        {:senderid,          no_params(), sender_id()   },
+        {:password,          no_params(), sender_pw()   },
+        {:controlid,         no_params(), control_id    },
+        {:uniqueid,          no_params(), false         },
+        {:dtdversion,        no_params(), dtd_version() },
+        {:includewhitespace, no_params(), false         },
       ]
     }
 
   def operation(functions) when is_list(functions), do:
-    {:operation, no_params, [authentication] ++ [{:content, no_params, functions}]}
+    {:operation, no_params(), [authentication()] ++ [{:content, no_params(), functions}]}
   def operation(function), do:
     operation([function])
 
-  def authentication, do:
+  def authentication(), do:
     {
-      :authentication, no_params,
+      :authentication, no_params(),
       [
         {
-          :login, no_params,
+          :login, no_params(),
           [
-            {:userid,    no_params, user_id       },
-            {:companyid, no_params, company_id    },
-            {:password,  no_params, user_password },
+            {:userid,    no_params(), user_id()       },
+            {:companyid, no_params(), company_id()    },
+            {:password,  no_params(), user_password() },
           ]
         }
       ]
     }
 
-  defp no_params,     do: %{}
-  defp sender_id,     do: env_var(:sender_id)
-  defp sender_pw,     do: env_var(:sender_password)
-  defp dtd_version,   do: env_var(:dtd_version)
-  defp user_id,       do: env_var(:user_id)
-  defp company_id,    do: env_var(:company_id)
-  defp user_password, do: env_var(:user_password)
+  defp no_params(),     do: %{}
+  defp sender_id(),     do: env_var(:sender_id)
+  defp sender_pw(),     do: env_var(:sender_password)
+  defp dtd_version(),   do: env_var(:dtd_version)
+  defp user_id(),       do: env_var(:user_id)
+  defp company_id(),    do: env_var(:company_id)
+  defp user_password(), do: env_var(:user_password)
 
-  defp minify(xml),        do: minify(xml, do_minify?)
+  defp minify(xml),        do: minify(xml, do_minify?())
   defp minify(xml, true),  do: xml |> remove_unnecessary_whitespace
   defp minify(xml, false), do: xml
 
-  defp do_minify? do
+  defp do_minify?() do
     case env_var(:minify_xml) do
       true  -> true
       "yes" -> true

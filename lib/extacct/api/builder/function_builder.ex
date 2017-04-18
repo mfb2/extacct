@@ -61,7 +61,7 @@ defmodule Extacct.API.FunctionBuilder do
       {:object,       @no_params, object                },
       {:fields,       @no_params, format_values(fields) },
       {:keys,         @no_params, format_values(keys)   },
-      {:returnFormat, @no_params, return_format         },
+      {:returnFormat, @no_params, return_format()       },
     ]
   }
 
@@ -72,8 +72,8 @@ defmodule Extacct.API.FunctionBuilder do
       {:object,       @no_params, object                },
       {:fields,       @no_params, format_values(fields) },
       {:query,        @no_params, query                 },
-      {:pagesize,     @no_params, query_page_size       },
-      {:returnFormat, @no_params, return_format         },
+      {:pagesize,     @no_params, query_page_size()     },
+      {:returnFormat, @no_params, return_format()       },
     ]
   }
 
@@ -84,7 +84,7 @@ defmodule Extacct.API.FunctionBuilder do
       {:report,        @no_params, report_name         },
       {:pagesize,      @no_params, env_var(:page_size) },
       {:waitTime,      @no_params, env_var(:wait_time) },
-      {:returnFormat,  @no_params, return_format       },
+      {:returnFormat,  @no_params, return_format()     },
       {:listSeparator, @no_params, @no_value           },
     ]
   }
