@@ -3,7 +3,7 @@ defmodule Extacct.Mixfile do
 
   def project do
     [app: :extacct,
-     version: "0.1.0",
+     version: "0.2.0",
      elixir: "~> 1.3",
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
