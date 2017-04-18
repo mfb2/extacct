@@ -179,4 +179,20 @@ defmodule Extacct do
   def get_list(object, handler), do:
     RequestWorker.get_list(object, handler)
 
+  @doc """
+  Obtain metadata about an object available in the Intacct API.
+
+  Returns a list of metadata for a set of fields on a given object.
+
+  ## Arguments
+
+    * `object` - The name of the object to be read from Intacct.
+
+    Examples: `"GLENTRY"`, `"GLACCOUNT"`, etc.
+
+  """
+  @spec inspect_detail(String.t) :: [list]
+  def inspect_detail(object), do:
+    elem(API.inspect_detail(object), 3)
+
 end

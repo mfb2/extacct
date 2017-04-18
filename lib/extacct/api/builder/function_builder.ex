@@ -38,6 +38,11 @@ defmodule Extacct.API.FunctionBuilder do
     |> function_spec(control_id)
   end
 
+  def inspect_detail(object, control_id) do
+    inspect_detail_spec(object)
+    |> function_spec(control_id)
+  end
+
   defp get_list_spec(object, max_list_size), do:
   {
     :get_list, %{"object" => object, "maxitems" => max_list_size}, []
@@ -89,6 +94,14 @@ defmodule Extacct.API.FunctionBuilder do
     :readMore, @no_params,
     [
       {method, @no_params, item_id}
+    ]
+  }
+
+  def inspect_detail_spec(object), do:
+  {
+    :inspect, %{detail: "1"},
+    [
+      {:object, @no_params, object}
     ]
   }
 

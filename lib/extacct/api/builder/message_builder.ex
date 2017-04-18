@@ -40,6 +40,11 @@ defmodule Extacct.API.MessageBuilder do
     |> build_xml_request(@control_id)
   end
 
+  def inspect_detail(object) do
+    FunctionBuilder.inspect_detail(object, @control_id)
+    |> build_xml_request(@control_id)
+  end
+
   def build_xml_request(functions, control_id) do
     functions
     |> request(control_id)

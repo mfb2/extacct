@@ -52,6 +52,12 @@ defmodule Extacct.API do
     |> create_response(:read_more)
   end
 
+  def inspect_detail(object) do
+    MessageBuilder.inspect_detail(object)
+    |> gateway.process(:inspect_detail)
+    |> create_response(:inspect_detail)
+  end
+
   defp gateway, do: env_var(:gateway)
 
   defp create_response(%GatewayResponse{headers: headers, content: response}, request_type) do

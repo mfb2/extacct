@@ -35,10 +35,15 @@ defmodule Extacct.FunctionBuilderTest do
     assert expected_read_by_query == read_by_query
   end
 
+  test "generates a valid inspect details tuple" do
+    assert expected_inspect_detail == inspect_detail
+  end
+
   def generate_report, do: FunctionBuilder.read_report(@report_name, @return_definitions, @control_id)
   def read_object,     do: FunctionBuilder.read(@object_name, @all_fields, [], @control_id)
   def read_by_name,    do: FunctionBuilder.read_by_name(@object_name, @all_fields, @object_name, @control_id)
   def read_by_query,   do: FunctionBuilder.read_by_query(@object_name, @all_fields, @object_query, @control_id)
+  def inspect_detail,  do: FunctionBuilder.inspect_detail(@object_name, @control_id)
 
   defp expected_read_report, do:
     {
@@ -101,6 +106,19 @@ defmodule Extacct.FunctionBuilderTest do
             {:query,        @no_params, @object_query  },
             {:pagesize,     @no_params, @page_size     },
             {:returnFormat, @no_params, @return_format },
+          ]
+        }
+      ]
+    }
+
+  defp expected_inspect_detail, do:
+    {
+        :function, %{controlid: @control_id},
+      [
+        {
+          :inspect, %{detail: "1"},
+          [
+            {:object,       @no_params, @object_name   },
           ]
         }
       ]
