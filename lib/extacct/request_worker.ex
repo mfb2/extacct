@@ -67,6 +67,7 @@ defmodule Extacct.RequestWorker do
     case API.read_more(:resultId, result_id) do
       {:read_more, _control_id, %{result_id: result_id, records_remaining: records_remaining} = _metadata, result} ->
         Logger.debug ":check_read_by_query for result_id #{result_id} returned data"
+        Logger.info "Reading more; records remaining for result_id #{inspect result_id}: #{inspect records_remaining}"
         send_to_handler(handler, :query_results, result)
         if records_remaining > 0 do
           Logger.debug "calling :check_read_by_query for result_id #{result_id} for more data"
@@ -74,6 +75,7 @@ defmodule Extacct.RequestWorker do
           {:noreply, state}
         else
           Logger.debug ":check_read_by_query for result_id #{result_id} has exhaused all records, halting process"
+          Logger.info "Read By Query completed for result id #{inspect result_id}"
           send_to_handler(handler, :query_end, result_id)
           {:stop, :normal, state}
         end
